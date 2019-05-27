@@ -1,40 +1,63 @@
-let mesh;
 let light;
+let mesh;
+let cube;
 
-async function loadObj(path) {
-  const response = await fetch(path);
-  const data = await response.text();
-  const lines = data.split('\n').slice(2);
+function buildObj(rawData) {
+  let vertices = [];
+  let edges = [];
+  
+  for(let line of rawData) {
+    if(line.id === 'v') {
+      vertices.push(new Vertex(line.points[0], line.points[1], line.points[2]));
+    } else if (line.id === 'f') {
+      edges.push(new Edge(vertices[line.points[0] - 1], vertices[line.points[1] - 1], vertices[line.points[2] - 1]));
+    
+    }    
+  }
 
-  let parsedData = [];
-
-  lines.forEach(line => {
-    const row = line.split(' ');
-    let points = [];
-
-    const id = row[0];
-
-    if(id != 's') {
-      points = [ row[1], row[2], row[3]];
-    }
-
-    parsedData.push({id, points});
-
-  });
-
-  return parsedData;
+  console.log('# vertices: ' + vertices.length);
+  console.log('# edges: ' + edges.length);
+  
+  return edges;
 }
 
 function setup() {
   createCanvas(800, 800);
 
-  let data = loadObj('resources/VideoShip.obj').catch(error => {
-    console.log('error !');
-    console.error(error);
+  mesh = new Mesh();
+  let parsedData = [];
+  let edges = [];
+
+  fetch('resources/VideoShip.obj')
+  .then(response => {
+    return response.text();
+  })
+  .then(data => {
+    let lines = data.split('\n');
+
+    lines.forEach(line => {
+      const row = line.split(' ');
+      let points = [];
+  
+  
+      const id = row[0];
+  
+      if((id != 's') && (id != '#')) {
+        points = [ row[1], row[2], row[3]];
+      }
+  
+      parsedData.push({id, points});
+    });
+
+    edges = buildObj(parsedData);
+
+    for(let edge of edges) {
+      mesh.add(edge);
+    }
+
   });
-
-  console.table(data);
-
+ 
+  /*
   let a = new Vertex(0, 0, 0);
   let b = new Vertex(0, 1, 0);
   let c = new Vertex(1, 1, 0);
@@ -44,31 +67,32 @@ function setup() {
   let g = new Vertex(1, 1, 1);
   let h = new Vertex(1, 0, 1);
 
-  mesh = new Mesh();
+  cube = new Mesh();
 
   // ? SOUTH
-  mesh.add(new Edge(a, b, c));
-  mesh.add(new Edge(a, c, d));
+  cube.add(new Edge(a, b, c));
+  cube.add(new Edge(a, c, d));
 
   // ? EAST
-  mesh.add(new Edge(d, c, g));
-  mesh.add(new Edge(d, g, h));
+  cube.add(new Edge(d, c, g));
+  cube.add(new Edge(d, g, h));
 
   // ? NORTH
-  mesh.add(new Edge(h, g, f));
-  mesh.add(new Edge(h, f, e));
+  cube.add(new Edge(h, g, f));
+  cube.add(new Edge(h, f, e));
 
   // ? WEST
-  mesh.add(new Edge(e, f, b));
-  mesh.add(new Edge(e, b, a));
+  cube.add(new Edge(e, f, b));
+  cube.add(new Edge(e, b, a));
 
   // ? TOP
-  mesh.add(new Edge(b, f, g));
-  mesh.add(new Edge(b, g, c));
+  cube.add(new Edge(b, f, g));
+  cube.add(new Edge(b, g, c));
 
   // ? BOTTOM
-  mesh.add(new Edge(e, a, d));
-  mesh.add(new Edge(e, d, h));
+  cube.add(new Edge(e, a, d));
+  cube.add(new Edge(e, d, h));
+  */
 }
 
 function draw() {
@@ -77,6 +101,6 @@ function draw() {
   background(0);
 
   light = createVector(-1, 0, -1);
+  //cube.show(light);
   mesh.show(light);
-
 }

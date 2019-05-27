@@ -7,6 +7,7 @@ class Vertex {
 }
 
 class Edge {
+    vertices = [];
     iteration = 0;
     brightness = 0;
     normal;
@@ -51,7 +52,7 @@ class Edge {
 
     project() {
         const FOV = 60;
-        const offset = 4;
+        const offset = 15;
         const Z_FAR = 10;
         const Z_NEAR = 1;
         const rotation_step = PI/180;
