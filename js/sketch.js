@@ -51,6 +51,10 @@ function setup() {
       mesh.add(edge);
     }
   });
+
+// ! Some weird stuff happening when drawing the object
+// ? Might be because edges are displayed in disorder
+// TODO: Draw the edges in the correct order (farthest to nearest)
  
   /*
   let a = new Vertex(0, 0, 0);
