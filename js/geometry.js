@@ -12,14 +12,15 @@ class Edge {
     iteration = 0;
     brightness = 0;
     normal;
+    distance = Infinity;
 
     constructor(a, b, c) {
         this.vertices = [a, b, c];
     }
 
     show(light){
-        const MIN_BRIGHTNESS = 150;
-        const MAX_BRIGHTNESS = 255;
+        const MIN_BRIGHTNESS = 120;
+        const MAX_BRIGHTNESS = 200;
 
         this.brightness = Edge.dot(light, this.normal);
 
@@ -93,6 +94,8 @@ class Edge {
 
         if(Edge.dot(this.normal, Edge.subVectors(rotatedX[0], viewCamera)) < 0) {
             isVisible = true;
+            this.distance = this.distTo(rotatedX);
+
             for(let i = 0; i < this.vertices.length; i++) {
                 transformed[i] = Edge.applyMatrix(rotatedX[i], projectionMatrix);
                 transformed[i].x += 1;
@@ -107,6 +110,11 @@ class Edge {
         } 
         return isVisible;
     }
+
+    distTo(vertices) {
+        const dst = (vertices[0].z + vertices[1].z + vertices[2].z) / 3;
+        return dst;
+    };
 
     static computeNormal(vertices) {
         const a = createVector(vertices[1].x - vertices[0].x,
@@ -160,11 +168,38 @@ class Mesh {
         this.edges.push(edge);
     }
 
-    show(light) {
+    show() {
+        let toBeDisplayed = [];
+        let goOn = true;
+        let i = 0;
         for(let edge of this.edges) {
             if(edge.project()) {
-                edge.show(this.light);
+                i = 0;
+                goOn = true;
+                if(toBeDisplayed.length == 0) {
+                    toBeDisplayed.push(edge);
+                } else {
+                    while(goOn) {
+                        if(edge.distance < toBeDisplayed[i].distance) {
+                            toBeDisplayed.splice(i, 0, edge);
+                            
+                            goOn = false;
+                        } else {
+                            if(i == toBeDisplayed.length - 1) {
+                                toBeDisplayed.push(edge);
+                                goOn = false
+                            }
+                        }
+                    i++;
+                    }
+                }
+                
             }
         }
+
+        for(let edge of toBeDisplayed.reverse()) {
+            edge.show(this.light);
+        }
+        
     }
 }
