@@ -1,4 +1,3 @@
-let light;
 let mesh;
 let cube;
 
@@ -24,7 +23,9 @@ function buildObj(rawData) {
 function setup() {
   createCanvas(800, 800);
 
-  mesh = new Mesh();
+  const light = createVector(-1, 0, -1);
+  mesh = new Mesh(light);
+
   let parsedData = [];
   let edges = [];
 
@@ -67,7 +68,7 @@ function setup() {
   let g = new Vertex(1, 1, 1);
   let h = new Vertex(1, 0, 1);
 
-  cube = new Mesh();
+  cube = new Mesh(light);
 
   // ? SOUTH
   cube.add(new Edge(a, b, c));
@@ -99,8 +100,6 @@ function draw() {
   translate(0, height);
   scale(1, -1);
   background(0);
-
-  light = createVector(-1, 0, -1);
-  //cube.show(light);
-  mesh.show(light);
+  //cube.show();
+  mesh.show();
 }

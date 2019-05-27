@@ -168,6 +168,11 @@ class Edge {
 
 class Mesh {
     edges = [];
+    light;
+
+    constructor(light) {
+        this.light = light;
+    }
 
     add(edge) {
         this.edges.push(edge);
@@ -175,7 +180,7 @@ class Mesh {
 
     show(light) {
         for (let edge of this.edges) {
-            edge.show(light);
+            edge.show(this.light);
         }
     }
 
