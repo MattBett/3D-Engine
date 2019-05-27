@@ -1,10 +1,38 @@
 let mesh;
 let light;
 
+async function loadObj(path) {
+  const response = await fetch(path);
+  const data = await response.text();
+  const lines = data.split('\n').slice(2);
+
+  lines.forEach(line => {
+    const row = line.split(' ');
+    let points = [];
+
+    const id = row[0];
+
+    if(id != 's') {
+      points = [ row[1], row[2], row[3]];
+    }
+
+    console.log(id, points);
+    console.log(lines[0]);
+  });
+
+  return lines;
+}
+
 function setup() {
   createCanvas(800, 800);
 
-  
+  let object = loadObj('resources/VideoShip.obj').catch(error => {
+    console.log('error !');
+    console.error(error);
+  });
+
+  console.log(object);
+
   let a = new Vertex(0, 0, 0);
   let b = new Vertex(0, 1, 0);
   let c = new Vertex(1, 1, 0);
