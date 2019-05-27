@@ -26,14 +26,12 @@ function setup() {
   const light = createVector(-1, 0, -1);
   mesh = new Mesh(light);
 
-  let parsedData = [];
-  let edges = [];
-
   fetch('resources/VideoShip.obj')
   .then(response => {
     return response.text();
   })
   .then(data => {
+    let parsedData = [];
     let lines = data.split('\n');
 
     lines.forEach(line => {
@@ -50,7 +48,7 @@ function setup() {
       parsedData.push({id, points});
     });
 
-    edges = buildObj(parsedData);
+    let edges = buildObj(parsedData);
 
     for(let edge of edges) {
       mesh.add(edge);
