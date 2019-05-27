@@ -36,9 +36,8 @@ function setup() {
 
     lines.forEach(line => {
       const row = line.split(' ');
+
       let points = [];
-  
-  
       const id = row[0];
   
       if((id != 's') && (id != '#')) {
@@ -48,12 +47,9 @@ function setup() {
       parsedData.push({id, points});
     });
 
-    let edges = buildObj(parsedData);
-
-    for(let edge of edges) {
+    for(let edge of buildObj(parsedData)) {
       mesh.add(edge);
     }
-
   });
  
   /*
