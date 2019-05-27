@@ -8,6 +8,7 @@ class Vertex {
 
 class Edge {
     vertices = [];
+    projection = [];
     iteration = 0;
     brightness = 0;
     normal;
@@ -17,37 +18,18 @@ class Edge {
     }
 
     show(light){
+        const MIN_BRIGHTNESS = 150;
+        const MAX_BRIGHTNESS = 255;
 
-        this.projection = this.project();
+        this.brightness = Edge.dot(light, this.normal);
 
-        if(this.projection != 0) {
-            const MIN_BRIGHTNESS = 150;
-            const MAX_BRIGHTNESS = 255;
+        stroke(map(this.brightness, 0, 1, MIN_BRIGHTNESS, MAX_BRIGHTNESS));
 
-            this.brightness = Edge.dot(light, this.normal);
+        fill(map(this.brightness, 0, 1, MIN_BRIGHTNESS, MAX_BRIGHTNESS));
 
-            stroke(map(this.brightness, 0, 1, MIN_BRIGHTNESS, MAX_BRIGHTNESS));
-
-            fill(map(this.brightness, 0, 1, MIN_BRIGHTNESS, MAX_BRIGHTNESS));
-
-            triangle(this.projection[0].x, this.projection[0].y,
+        triangle(this.projection[0].x, this.projection[0].y,
                 this.projection[1].x, this.projection[1].y,
-                this.projection[2].x, this.projection[2].y,
-                );
-        }
-
-        //this.show_debug();
-    }
-
-    show_debug(){
-        stroke('black');
-        strokeWeight(1);
-
-        if(this.projection != 0) {
-            line(this.projection[0].x, this.projection[0].y, this.projection[1].x, this.projection[1].y);
-            line(this.projection[1].x, this.projection[1].y, this.projection[2].x, this.projection[2].y);
-            line(this.projection[2].x, this.projection[2].y, this.projection[0].x, this.projection[0].y);
-        }
+                this.projection[2].x, this.projection[2].y);
     }
 
     project() {
@@ -98,6 +80,7 @@ class Edge {
         let transformed = [];
         let rotatedZ = [];
         let rotatedX = [];
+        let isVisible = false;
 
         for(let i = 0; i < this.vertices.length; i++) {
             let vertex = this.vertices[i];
@@ -109,6 +92,7 @@ class Edge {
         this.normal = Edge.computeNormal(rotatedX);
 
         if(Edge.dot(this.normal, Edge.subVectors(rotatedX[0], viewCamera)) < 0) {
+            isVisible = true;
             for(let i = 0; i < this.vertices.length; i++) {
                 transformed[i] = Edge.applyMatrix(rotatedX[i], projectionMatrix);
                 transformed[i].x += 1;
@@ -119,11 +103,9 @@ class Edge {
                 transformed[i].x /= 2;
                 transformed[i].y /= 2;
             }
-            return transformed;
-        } else {
-            return 0;
-        }
-
+            this.projection = transformed;
+        } 
+        return isVisible;
     }
 
     static computeNormal(vertices) {
@@ -179,14 +161,10 @@ class Mesh {
     }
 
     show(light) {
-        for (let edge of this.edges) {
-            edge.show(this.light);
-        }
-    }
-
-    show_debug() {
         for(let edge of this.edges) {
-            edge.show_debug();
+            if(edge.project()) {
+                edge.show(this.light);
+            }
         }
     }
 }
