@@ -1,5 +1,6 @@
-let mesh;
-let cube;
+// TODO Implement a movable camera
+
+let objects = [];
 
 function buildObj(rawData) {
   let vertices = [];
@@ -23,7 +24,8 @@ function setup() {
   createCanvas(800, 800);
 
   const light = createVector(-1, 0, -1);
-  mesh = new Mesh(light);
+  let videoship = new Mesh();
+  videoship.setLightning(light);
 
   //fetch('resources/Cube.obj')
   fetch('resources/VideoShip.obj')
@@ -48,10 +50,15 @@ function setup() {
     });
 
     for(let edge of buildObj(parsedData)) {
-      mesh.add(edge);
+      videoship.add(edge);
     }
-  });
 
+    objects.push(videoship);
+  })
+  .catch(error => {
+    console.log('Error! :(');
+    console.error(error);
+  });
 }
 
 function draw() {
@@ -59,6 +66,5 @@ function draw() {
   scale(1, -1);
   background(0);
 
-  mesh.show();
- 
+  Mesh.display(objects);
 }

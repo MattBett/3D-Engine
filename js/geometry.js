@@ -4,6 +4,47 @@ class Vertex {
         this.y = y;
         this.z = z;
     }
+
+    static computeNormal(vertices) {
+        const a = createVector(vertices[1].x - vertices[0].x,
+                            vertices[1].y - vertices[0].y,
+                            vertices[1].z - vertices[0].z);
+
+        const b = createVector(vertices[2].x - vertices[0].x,
+                            vertices[2].y - vertices[0].y,
+                            vertices[2].z - vertices[0].z);                            
+        
+        return (createVector(a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x)).normalize();
+    }
+
+    static dot(a, b) {
+        return (a.x*b.x + a.y*b.y + a.z*b.z);
+    }
+
+    static addVectors(a, b) {
+        return createVector(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
+
+    static subVectors(a, b) {
+        // ? Return vector a - vector b
+        return createVector(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
+    static applyMatrix(v, m) {
+        let o = new Vertex(
+            v.x * m[0][0] + v.y * m[1][0] + v.z * m[2][0] + m[3][0],
+            v.x * m[0][1] + v.y * m[1][1] + v.z * m[2][1] + m[3][1],
+            v.x * m[0][2] + v.y * m[1][2] + v.z * m[2][2] + m[3][2]);
+    
+        let w = v.x * m[0][3] + v.y * m[1][3] + v.z * m[2][3] + m[3][3];
+        
+        if (w != 0) {
+            o.x /= w;
+            o.y /= w;
+            o.z /= w;
+        }
+        return o;
+    }
 }
 
 class Edge {
@@ -13,16 +54,21 @@ class Edge {
     brightness = 0;
     normal;
     distance = Infinity;
+    isVisible = false;
 
     constructor(a, b, c) {
         this.vertices = [a, b, c];
+    }
+
+    setDistance(vertices) {
+        this.distance = Edge.distTo(vertices);
     }
 
     show(light){
         const MIN_BRIGHTNESS = 120;
         const MAX_BRIGHTNESS = 200;
 
-        this.brightness = Edge.dot(light, this.normal);
+        this.brightness = Vertex.dot(light, this.normal);
 
         stroke(map(this.brightness, 0, 1, MIN_BRIGHTNESS, MAX_BRIGHTNESS));
 
@@ -81,23 +127,22 @@ class Edge {
         let transformed = [];
         let rotatedZ = [];
         let rotatedX = [];
-        let isVisible = false;
 
         for(let i = 0; i < this.vertices.length; i++) {
             let vertex = this.vertices[i];
-            rotatedZ[i] = Edge.applyMatrix(vertex, RotationZ);
-            rotatedX[i] = Edge.applyMatrix(rotatedZ[i], RotationX);
+            rotatedZ[i] = Vertex.applyMatrix(vertex, RotationZ);
+            rotatedX[i] = Vertex.applyMatrix(rotatedZ[i], RotationX);
             rotatedX[i].z += offset;
         }
 
-        this.normal = Edge.computeNormal(rotatedX);
+        this.normal = Vertex.computeNormal(rotatedX);
 
-        if(Edge.dot(this.normal, Edge.subVectors(rotatedX[0], viewCamera)) < 0) {
-            isVisible = true;
-            this.distance = this.distTo(rotatedX);
+        if(Vertex.dot(this.normal, Vertex.subVectors(rotatedX[0], viewCamera)) < 0) {
+            this.isVisible = true;
+            this.setDistance(rotatedX);
 
             for(let i = 0; i < this.vertices.length; i++) {
-                transformed[i] = Edge.applyMatrix(rotatedX[i], projectionMatrix);
+                transformed[i] = Vertex.applyMatrix(rotatedX[i], projectionMatrix);
                 transformed[i].x += 1;
                 transformed[i].y += 1;
     
@@ -107,65 +152,51 @@ class Edge {
                 transformed[i].y /= 2;
             }
             this.projection = transformed;
-        } 
-        return isVisible;
+        } else {
+            this.isVisible = false;
+        }
     }
 
-    distTo(vertices) {
+    static distTo(vertices) {
         const dst = (vertices[0].z + vertices[1].z + vertices[2].z) / 3;
         return dst;
     };
-
-    static computeNormal(vertices) {
-        const a = createVector(vertices[1].x - vertices[0].x,
-                            vertices[1].y - vertices[0].y,
-                            vertices[1].z - vertices[0].z);
-
-        const b = createVector(vertices[2].x - vertices[0].x,
-                            vertices[2].y - vertices[0].y,
-                            vertices[2].z - vertices[0].z);                            
-        
-        return (createVector(a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x)).normalize();
-    }
-
-    static dot(a, b) {
-        return (a.x*b.x + a.y*b.y + a.z*b.z);
-    }
-
-    static subVectors(a, b) {
-        // ? Return vector a - vector b
-        return createVector(a.x - b.x, a.y - b.y, a.z - b.z);
-    }
-
-    static applyMatrix(v, m) {
-        
-        let o = new Vertex(
-            v.x * m[0][0] + v.y * m[1][0] + v.z * m[2][0] + m[3][0],
-            v.x * m[0][1] + v.y * m[1][1] + v.z * m[2][1] + m[3][1],
-            v.x * m[0][2] + v.y * m[1][2] + v.z * m[2][2] + m[3][2]);
-    
-        let w = v.x * m[0][3] + v.y * m[1][3] + v.z * m[2][3] + m[3][3];
-        
-        if (w != 0) {
-            o.x /= w;
-            o.y /= w;
-            o.z /= w;
-        }
-
-        return o;
-    }
 }
 
 class Mesh {
     edges = [];
-    light;
+    distance = Infinity;
+    light = createVector(0, 0, 0);
 
-    constructor(light) {
+    setLightning(light) {
         this.light = light;
+    }
+
+    setDist() {
+        let sum = 0;
+        let denum = 0;
+        let newDist = Infinity;
+
+        if(this.edges.length != 0) {
+            for(let edge of this.edges) {
+                sum += edge.distance;
+                denum++;
+            }
+            newDist = sum / denum;
+        }
+
+        this.distance = newDist;
+        return newDist;
     }
 
     add(edge) {
         this.edges.push(edge);
+    }
+
+    project() {
+        for(let edge of this.edges) {
+            edge.project();
+        }
     }
 
     show() {
@@ -173,7 +204,7 @@ class Mesh {
         let goOn = true;
         let i = 0;
         for(let edge of this.edges) {
-            if(edge.project()) {
+            if(edge.isVisible) {
                 i = 0;
                 goOn = true;
                 if(toBeDisplayed.length == 0) {
@@ -182,7 +213,6 @@ class Mesh {
                     while(goOn) {
                         if(edge.distance < toBeDisplayed[i].distance) {
                             toBeDisplayed.splice(i, 0, edge);
-                            
                             goOn = false;
                         } else {
                             if(i == toBeDisplayed.length - 1) {
@@ -193,13 +223,50 @@ class Mesh {
                     i++;
                     }
                 }
-                
             }
         }
 
         for(let edge of toBeDisplayed.reverse()) {
             edge.show(this.light);
         }
-        
+    }
+
+    static display(objects) {
+        let toBeDisplayed = [];
+        let goOn = true;
+        let i = 0;
+        let hasDrawn = false;
+
+        for(let object of objects) {
+            i = 0;
+            goOn = true;
+            object.project();
+            if(toBeDisplayed.length == 0) {
+                toBeDisplayed.push(object);
+            } else {
+                while(goOn) {
+                    if(object.setDist() < toBeDisplayed[i].distance) {
+                        toBeDisplayed.splice(i, 0, object);
+                        goOn = false;
+                    } else {
+                        if(i == toBeDisplayed.length - 1) {
+                            toBeDisplayed.push(object);
+                            goOn = false
+                        }
+                    }
+                i++;
+                }
+            } 
+        }
+
+        if(toBeDisplayed.length > 0) {
+            hasDrawn = true;
+        }
+
+        for(let object of toBeDisplayed.reverse()) {
+            object.show(object.light);
+        }
+
+        return hasDrawn;
     }
 }
